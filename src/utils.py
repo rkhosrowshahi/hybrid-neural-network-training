@@ -53,8 +53,12 @@ def init_pop_in_block(NP, codebook, params):
     BD = len(codebook)
     min_blocks, max_blocks = np.zeros(BD), np.zeros(BD)
 
+    cb_keys = list(codebook.keys())
+
     for idx, block in codebook.items():
-        min_blocks[idx], max_blocks[idx] = np.min(params[block]), np.max(params[block])
+        min_blocks[idx], max_blocks[idx] = np.mean(
+            params[codebook[cb_keys[(idx - 1) % BD]]]
+        ), np.mean(params[codebook[cb_keys[(idx + 1) % BD]]])
 
     return np.random.uniform(min_blocks, max_blocks, size=(NP, BD))
 

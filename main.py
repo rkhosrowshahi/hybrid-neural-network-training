@@ -69,35 +69,37 @@ def main(args):
     if args.solver.lower() == "de":
         optimizer = DE(popsize=100, num_dims=BD, maximize=True)
     if args.solver.lower() == "pso":
-        optimizer = PSO(popsize=100, num_dims=BD, maximize=True)
+        optimizer = PSO(popsize=50, num_dims=BD, maximize=True)
     elif args.solver.lower() == "cma-es":
         optimizer = CMA_ES(
             # popsize=4 + int(np.floor(3 * np.log(BD))),
-            popsize=200,
+            popsize=100,
             num_dims=BD,
             sigma_init=0.002,
             maximize=True,
         )
     elif args.solver.lower() == "simple-es":
-        optimizer = SimpleES(popsize=200, num_dims=BD, sigma_init=0.002, maximize=True)
+        optimizer = SimpleES(popsize=100, num_dims=BD, sigma_init=0.002, maximize=True)
     elif args.solver.lower() == "open-es":
         optimizer = OpenES(popsize=100, num_dims=BD, opt_name="adam", maximize=True)
     # print(optimizer.fitness_shaper.maximize)
     NP = optimizer.popsize
     es_params = optimizer.default_params
+    print(np.min(x0), np.max(x0))
+    es_params = es_params.replace(clip_min=-2, clip_max=2)
 
     if args.solver.lower() == "de":
         es_params = es_params.replace(
-            init_min=np.min(x0),
-            init_max=np.max(x0),
-            diff_w=0.5,
+            # init_min=np.min(x0),
+            # init_max=np.max(x0),
+            diff_w=0.1,
             cross_over_rate=0.7,
             mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
         )
     elif args.solver.lower() == "pso":
         es_params = es_params.replace(
-            init_min=np.min(x0),
-            init_max=np.max(x0),
+            # init_min=np.min(x0),
+            # init_max=np.max(x0),
             inertia_coeff=0.729844,  # w momentum of velocity
             cognitive_coeff=1.49618,  # c_1 cognitive "force" multiplier
             social_coeff=1.49618,  # c_2 social "force" multiplier
@@ -157,7 +159,7 @@ def main(args):
     # else:
     #     scale_type = "N/A"
     print(
-        f"n_step, n_eval, best F, pop F_best, pop F_mean, pop F_std, time_step",
+        f"n_step, n_eval, best F, pop F_best, pop F_mean, pop F_std, pop X_low, pop X_high, time_step",
         end=", ",
     )
     if scale_type is not None:
@@ -175,11 +177,11 @@ def main(args):
 
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
+        print(pop_X.min(), pop_X.max())
         if FE == 0:
-            # init_pop[0] = x0
+            if args.solver.lower() == "de" or args.solver.lower() == "pso":
+                pop_X = jnp.array(init_pop)
             pop_X = pop_X.at[0].set(x0)
-            # if args.solver.lower() == "de" or args.solver.lower() == "pso":
-            #    pop_X = jnp.array(init_pop)
 
         for ip in tqdm(
             range(NP),
@@ -213,7 +215,7 @@ def main(args):
         #     scale = "N/A"
 
         print(
-            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {(t2-t1):.6f}",
+            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {pop_X.min():.6f}, {pop_X.max():.6f}, {(t2-t1):.6f}",
             end=", ",
         )
         if scale is not None:
