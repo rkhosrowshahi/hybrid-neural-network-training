@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-torch.set_num_threads(1)
+# torch.set_num_threads(1)
 from tqdm import tqdm
 
 from src.gfo import GFOProblem, SOCallback
