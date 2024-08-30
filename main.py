@@ -70,8 +70,8 @@ def main(args):
     es_params = es_params.replace(
         init_min=-5,
         init_max=5,
-        diff_w=0.5,
-        mutate_best_vector=True,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
+        diff_w=0.1,
+        mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
     )
 
     # init_pop = jax.random.uniform(rng, (NP, BD), minval=-5, maxval=5)
@@ -100,7 +100,7 @@ def main(args):
             "n_step": [0],
             "n_eval": [1],
             "f_best": [best_F],
-            "f_avg": [best_F],
+            "f_avg": [0],
             "f_std": [0],
             "test_f1_best": problem.f1score_func(model, test_loader, device),
             "test_top1_best": problem.top1_func(model, test_loader, device),
@@ -134,11 +134,16 @@ def main(args):
         start_iter=iters,
         problem=problem,
     )
-    print(f"n_step, n_eval, best F, pop F_min, pop F_mean, pop F_std, time_step")
+    print(
+        f"n_step, n_eval, best F, pop F_min, pop F_mean, pop F_std, mutation_rate, time_step"
+    )
     while FE <= maxFE:
         t1 = time.time()
         pop_F = np.zeros(NP)
         # pop_X = np.zeros((NP, BD))
+        es_params = es_params.replace(
+            diff_w=np.random.uniform(low=0, high=1.5, size=1)[0]
+        )
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
         if FE == 0:
@@ -169,7 +174,7 @@ def main(args):
             niter=iters, neval=FE, opt_X=best_x0, opt_F=best_F, pop_F=pop_F
         )
         print(
-            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {(t2-t1):.6f}"
+            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {es_params.diff_w}, {(t2-t1):.6f}"
         )
 
 

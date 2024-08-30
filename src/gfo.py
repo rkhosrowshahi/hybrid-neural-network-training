@@ -400,6 +400,8 @@ class SOCallback(Callback):
             # Save the DataFrame back to the CSV file
             df.to_csv(self.csv_path, index=False)
 
+            df = df.iloc[1:]
+
             plt.plot(df["n_eval"].to_numpy(), df["f_best"].to_numpy(), label="best")
             plt.plot(df["n_eval"].to_numpy(), df["f_avg"].to_numpy(), label="average")
             # plt.plot(df["n_eval"].to_numpy(), df["f_avg"].to_numpy(), label="average")
