@@ -176,9 +176,10 @@ def main(args):
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
         if FE == 0:
-            init_pop[0] = x0
+            # init_pop[0] = x0
+            pop_X = pop_X.at[0].set(x0)
             # if args.solver.lower() == "de" or args.solver.lower() == "pso":
-            #     pop_X = jnp.array(init_pop)
+            #    pop_X = jnp.array(init_pop)
 
         for ip in tqdm(
             range(NP),
