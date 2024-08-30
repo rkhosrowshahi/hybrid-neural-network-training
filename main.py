@@ -67,21 +67,21 @@ def main(args):
 
     optimizer = None
     if args.solver.lower() == "de":
-        optimizer = DE(popsize=1000, num_dims=BD, maximize=True)
+        optimizer = DE(popsize=100, num_dims=BD, maximize=True)
     if args.solver.lower() == "pso":
-        optimizer = PSO(popsize=1000, num_dims=BD, maximize=True)
+        optimizer = PSO(popsize=100, num_dims=BD, maximize=True)
     elif args.solver.lower() == "cma-es":
         optimizer = CMA_ES(
             # popsize=4 + int(np.floor(3 * np.log(BD))),
-            popsize=1000,
+            popsize=200,
             num_dims=BD,
             sigma_init=0.002,
             maximize=True,
         )
     elif args.solver.lower() == "simple-es":
-        optimizer = SimpleES(popsize=1000, num_dims=BD, sigma_init=0.002, maximize=True)
+        optimizer = SimpleES(popsize=200, num_dims=BD, sigma_init=0.002, maximize=True)
     elif args.solver.lower() == "open-es":
-        optimizer = OpenES(popsize=1000, num_dims=BD, opt_name="adam", maximize=True)
+        optimizer = OpenES(popsize=100, num_dims=BD, opt_name="adam", maximize=True)
     # print(optimizer.fitness_shaper.maximize)
     NP = optimizer.popsize
     es_params = optimizer.default_params
