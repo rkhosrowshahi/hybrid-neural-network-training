@@ -177,8 +177,8 @@ def main(args):
 
         if FE == 0:
             init_pop[0] = x0
-            if args.solver.lower() == "de" or args.solver.lower() == "pso":
-                pop_X = jnp.array(init_pop)
+            # if args.solver.lower() == "de" or args.solver.lower() == "pso":
+            #     pop_X = jnp.array(init_pop)
 
         for ip in tqdm(
             range(NP),
