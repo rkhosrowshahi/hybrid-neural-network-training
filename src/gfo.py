@@ -117,7 +117,7 @@ class GFOProblem(Problem):
     def f1score_func(self, model, data_loader, device):
         model.eval()
         fitness = 0
-        all_outputs, all_labels = (
+        all_preds, all_labels = (
             torch.Tensor([]).to(device),
             torch.Tensor([]).to(device),
         )
@@ -128,15 +128,15 @@ class GFOProblem(Problem):
                 outputs = model(data)
                 _, preds = torch.max(outputs, 1)
 
-                all_outputs = torch.cat((all_outputs, preds))
+                all_preds = torch.cat((all_preds, preds))
                 all_labels = torch.cat((all_labels, labels))
                 # )
                 # if mode == "val":
                 #     break
         t2 = time.time()
         fitness = f1_score(
-            all_outputs.cpu().detach(),
-            all_labels.cpu().detach(),
+            y_true=all_labels.cpu().detach(),
+            y_pred=all_preds.cpu().detach(),
             average="macro",
             labels=np.arange(self.num_classes),
         )
@@ -163,8 +163,8 @@ class GFOProblem(Problem):
                 #     break
         t2 = time.time()
         fitness = top_k_accuracy_score(
-            all_labels.cpu().detach(),
-            all_outputs.cpu().detach(),
+            y_true=all_labels.cpu().detach(),
+            y_score=all_outputs.cpu().detach(),
             k=1,
             labels=np.arange(self.num_classes),
         )

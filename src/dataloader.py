@@ -1,3 +1,5 @@
+import os
+import pickle
 import numpy as np
 import torch
 import torchvision
@@ -66,15 +68,31 @@ def get_val_test_dataloader(dataset, batch_size):
         testset = torchvision.datasets.CIFAR100(
             root="./data", train=False, download=True, transform=transform_test
         )
-        balanced_indices = get_balanced_subset(
-            testset, val_num_samples + test_num_samples, num_classes
-        )
-        val_set = Subset(
-            testset, balanced_indices[:, : (val_num_samples // num_classes)].flatten()
-        )
-        test_set = Subset(
-            testset, balanced_indices[:, (val_num_samples // num_classes) :].flatten()
-        )
+        if os.path.exists("./splits/cifar-100_val_test_split.npz"):
+            c = np.load("./splits/cifar-100_val_test_split.npz")
+            val_indices = c["val"]
+            test_indices = c["test"]
+
+        else:
+            balanced_indices = get_balanced_subset(
+                testset, val_num_samples + test_num_samples, num_classes
+            )
+            val_indices = balanced_indices[
+                :, : (val_num_samples // num_classes)
+            ].flatten()
+            np.random.shuffle(val_indices)
+            test_indices = balanced_indices[
+                :, (val_num_samples // num_classes) :
+            ].flatten()
+            np.random.shuffle(test_indices)
+            np.savez(
+                "./splits/cifar-100_val_test_split.npz",
+                val=val_indices,
+                test=test_indices,
+            )
+
+        val_set = Subset(testset, val_indices)
+        test_set = Subset(testset, test_indices)
         # test_set = testset
         # val_set = testset
 

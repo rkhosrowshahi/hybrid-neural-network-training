@@ -135,14 +135,14 @@ def main(args):
         problem=problem,
     )
     print(
-        f"n_step, n_eval, best F, pop F_min, pop F_mean, pop F_std, mutation_rate, time_step"
+        f"n_step, n_eval, best F, pop F_best, pop F_mean, pop F_std, mutation_rate, time_step"
     )
     while FE <= maxFE:
         t1 = time.time()
         pop_F = np.zeros(NP)
         # pop_X = np.zeros((NP, BD))
         es_params = es_params.replace(
-            diff_w=np.random.uniform(low=0, high=0.5, size=1)[0]
+            diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
         )
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
@@ -174,7 +174,7 @@ def main(args):
             niter=iters, neval=FE, opt_X=best_x0, opt_F=best_F, pop_F=pop_F
         )
         print(
-            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {es_params.diff_w}, {(t2-t1):.6f}"
+            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {es_params.diff_w:.6f}, {(t2-t1):.6f}"
         )
 
 
