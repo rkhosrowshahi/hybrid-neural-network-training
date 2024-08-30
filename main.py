@@ -18,7 +18,7 @@ from src.utils import (
     set_seed,
 )
 from src.block import blocker, unblocker
-from evosax import DE
+from evosax import DE, CMA_ES, PSO
 
 
 def main(args):
@@ -63,16 +63,38 @@ def main(args):
         num_classes=num_classes,
     )
 
-    optimizer = DE(popsize=100, num_dims=BD, maximize=True)
+    optimizer = None
+    if args.solver.lower() == "de":
+        optimizer = DE(popsize=100, num_dims=BD, maximize=True)
+    if args.solver.lower() == "pso":
+        optimizer = PSO(popsize=10, num_dims=BD, maximize=True)
+    elif args.solver.lower() == "cma-es":
+        optimizer = CMA_ES(
+            popsize=4 + int(np.floor(3 * np.log(BD))),
+            num_dims=BD,
+            sigma_init=0.01,
+            maximize=True,
+        )
     # print(optimizer.fitness_shaper.maximize)
     NP = optimizer.popsize
     es_params = optimizer.default_params
-    es_params = es_params.replace(
-        init_min=-5,
-        init_max=5,
-        diff_w=0.1,
-        mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
-    )
+
+    if args.solver.lower() == "de":
+        es_params = es_params.replace(
+            init_min=np.min(x0),
+            init_max=np.max(x0),
+            diff_w=0.1,
+            mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
+        )
+    elif args.solver.lower() == "pso":
+        es_params = es_params.replace(
+            init_min=np.min(x0),
+            init_max=np.max(x0),
+            inertia_coeff=0.729844,  # w momentum of velocity
+            cognitive_coeff=1.49618,  # c_1 cognitive "force" multiplier
+            social_coeff=1.49618,  # c_2 social "force" multiplier
+        )
+    # elif args.solver.lower() == "cma-es":
 
     # init_pop = jax.random.uniform(rng, (NP, BD), minval=-5, maxval=5)
     init_pop = init_pop_in_block(NP, codebook, model_params)
@@ -92,8 +114,11 @@ def main(args):
     best_x0 = x0
     print(f"Block Model F: {best_F:.6f}")
 
-    csv_path = f"outs/resnet18_cifar100_hist.csv"
-    plt_path = f"outs/resnet18_cifar100_plt.pdf"
+    if args.solver.lower() == "cma-es":
+        state = state.replace(mean=x0)
+
+    csv_path = f"outs/resnet18_cifar100_{args.solver.lower()}_hist.csv"
+    plt_path = f"outs/resnet18_cifar100_{args.solver.lower()}_plt.pdf"
 
     df = pd.DataFrame(
         {
@@ -134,16 +159,30 @@ def main(args):
         start_iter=iters,
         problem=problem,
     )
+    scale_type = None
+    if args.solver.lower() == "de":
+        scale_type = "mutation_rate"
+    elif args.solver.lower() == "cma-es":
+        scale_type = "sigma"
+    # else:
+    #     scale_type = "N/A"
     print(
-        f"n_step, n_eval, best F, pop F_best, pop F_mean, pop F_std, mutation_rate, time_step"
+        f"n_step, n_eval, best F, pop F_best, pop F_mean, pop F_std, time_step",
+        end=", ",
     )
+    if scale_type is not None:
+        print(f"{scale_type}")
+    else:
+        print()
     while FE <= maxFE:
         t1 = time.time()
         pop_F = np.zeros(NP)
         # pop_X = np.zeros((NP, BD))
-        es_params = es_params.replace(
-            diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
-        )
+        if args.solver.lower() == "de":
+            es_params = es_params.replace(
+                diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
+            )
+
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
         if FE == 0:
@@ -173,15 +212,31 @@ def main(args):
         callback.general_caller(
             niter=iters, neval=FE, opt_X=best_x0, opt_F=best_F, pop_F=pop_F
         )
+        scale = None
+        if args.solver.lower() == "de":
+            scale = str(round(es_params.diff_w, 6))
+        elif args.solver.lower() == "cma-es":
+            scale = str(round(state.sigma, 6))
+        # else:
+        #     scale = "N/A"
+
         print(
-            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {es_params.diff_w:.6f}, {(t2-t1):.6f}"
+            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {(t2-t1):.6f}",
+            end=", ",
         )
+        if scale is not None:
+            print(f"{scale}")
+        else:
+            print()
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, required=False, help="network type")
+    parser.add_argument(
+        "--solver", type=str, required=False, help="optimizer type, e.g., DE or CMA-ES"
+    )
     parser.add_argument(
         "--model_path", type=str, required=False, help="model checkpoint path"
     )
@@ -211,3 +266,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
+# FOR DEBUGGING jax.debug.print("{}", best_archive_fitness[0])
