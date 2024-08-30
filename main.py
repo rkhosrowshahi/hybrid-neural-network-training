@@ -142,7 +142,7 @@ def main(args):
         pop_F = np.zeros(NP)
         # pop_X = np.zeros((NP, BD))
         es_params = es_params.replace(
-            diff_w=np.random.uniform(low=0, high=1.5, size=1)[0]
+            diff_w=np.random.uniform(low=0, high=0.5, size=1)[0]
         )
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
