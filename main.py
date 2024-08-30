@@ -74,7 +74,7 @@ def main(args):
         optimizer = CMA_ES(
             popsize=4 + int(np.floor(3 * np.log(BD))),
             num_dims=BD,
-            sigma_init=0.01,
+            sigma_init=0.1,
             maximize=True,
         )
     # print(optimizer.fitness_shaper.maximize)
@@ -187,7 +187,11 @@ def main(args):
 
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
-        if (args.solver.lower() == "de" or args.solver.lower() == "pso") and FE == 0:
+        if (
+            args.solver.lower() == "de"
+            or args.solver.lower() == "pso"
+            or args.solver.lower() == "cma-es"
+        ) and FE == 0:
             init_pop[0] = x0
             pop_X = jnp.array(init_pop)
 

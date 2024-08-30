@@ -84,6 +84,7 @@ def get_val_test_dataloader(dataset, batch_size):
             test_indices = balanced_indices[
                 :, (val_num_samples // num_classes) :
             ].flatten()
+            # test_indices = balanced_indices.flatten()
             np.random.shuffle(test_indices)
             np.savez(
                 "./splits/cifar-100_val_test_split.npz",
