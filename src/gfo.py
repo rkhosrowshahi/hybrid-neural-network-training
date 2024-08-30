@@ -271,7 +271,7 @@ class SOCallback(Callback):
 
     def __init__(
         self,
-        k_FEs=10,
+        k_steps=10,
         problem=None,
         csv_path=None,
         plt_path=None,
@@ -279,7 +279,7 @@ class SOCallback(Callback):
         start_iter=0,
     ) -> None:
         super().__init__()
-        self.k_FEs = k_FEs
+        self.k_steps = k_steps
         self.csv_path = csv_path
         self.plt_path = plt_path
         self.problem = problem
@@ -298,7 +298,7 @@ class SOCallback(Callback):
         df = pd.read_csv(self.csv_path)
         # if len(df) >= 2:
 
-        if (self.start_eval + algorithm.evaluator.n_eval) % self.k_FEs == 0:
+        if (self.start_iter + algorithm.n_iter) % self.k_steps == 0:
             best_X = algorithm.opt.get("X")[0]
 
             NP = len(algorithm.pop)
@@ -380,7 +380,7 @@ class SOCallback(Callback):
         opt_F,
         pop_F,
     ):
-        if niter % 50 == 0:
+        if niter % self.k_steps == 0:
             best_X, best_F = opt_X, opt_F
             df = pd.read_csv(self.csv_path)
 
@@ -412,6 +412,7 @@ class SOCallback(Callback):
                     label="best (test)",
                 )
             plt.xlabel("FE")
+            plt.xscale("log")
             plt.ylabel("F1 score")
             plt.legend()
             plt.grid()

@@ -20,7 +20,7 @@ from src.utils import (
     set_seed,
 )
 from src.block import blocker, unblocker
-from evosax import DE, CMA_ES, PSO
+from evosax import DE, CMA_ES, PSO, OpenES, SimpleES
 
 
 def main(args):
@@ -67,16 +67,21 @@ def main(args):
 
     optimizer = None
     if args.solver.lower() == "de":
-        optimizer = DE(popsize=50, num_dims=BD, maximize=True)
+        optimizer = DE(popsize=1000, num_dims=BD, maximize=True)
     if args.solver.lower() == "pso":
-        optimizer = PSO(popsize=50, num_dims=BD, maximize=True)
+        optimizer = PSO(popsize=1000, num_dims=BD, maximize=True)
     elif args.solver.lower() == "cma-es":
         optimizer = CMA_ES(
-            popsize=4 + int(np.floor(3 * np.log(BD))),
+            # popsize=4 + int(np.floor(3 * np.log(BD))),
+            popsize=1000,
             num_dims=BD,
-            sigma_init=0.1,
+            sigma_init=0.002,
             maximize=True,
         )
+    elif args.solver.lower() == "simple-es":
+        optimizer = SimpleES(popsize=1000, num_dims=BD, sigma_init=0.002, maximize=True)
+    elif args.solver.lower() == "open-es":
+        optimizer = OpenES(popsize=1000, num_dims=BD, opt_name="adam", maximize=True)
     # print(optimizer.fitness_shaper.maximize)
     NP = optimizer.popsize
     es_params = optimizer.default_params
@@ -86,6 +91,7 @@ def main(args):
             init_min=np.min(x0),
             init_max=np.max(x0),
             diff_w=0.5,
+            cross_over_rate=0.7,
             mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
         )
     elif args.solver.lower() == "pso":
@@ -116,7 +122,7 @@ def main(args):
     best_x0 = x0
     print(f"Block Model F: {best_F:.6f}")
 
-    if args.solver.lower() == "cma-es":
+    if "es" in args.solver.lower():
         state = state.replace(mean=x0)
 
     csv_path = f"outs/resnet18_cifar100_{args.solver.lower()}_hist.csv"
@@ -136,25 +142,7 @@ def main(args):
     df.to_csv(csv_path, index=False)
 
     callback = SOCallback(
-        k_FEs=[
-            100,
-            200,
-            500,
-            1000,
-            2000,
-            5000,
-            10000,
-            20000,
-            50000,
-            100000,
-            200000,
-            500000,
-            1000000,
-            1500000,
-            2000000,
-            2500000,
-            3000000,
-        ],
+        k_steps=50,
         csv_path=csv_path,
         plt_path=plt_path,
         start_eval=FE,
@@ -164,7 +152,7 @@ def main(args):
     scale_type = None
     if args.solver.lower() == "de":
         scale_type = "mutation_rate"
-    elif args.solver.lower() == "cma-es":
+    elif "es" in args.solver.lower():
         scale_type = "sigma"
     # else:
     #     scale_type = "N/A"
@@ -187,13 +175,10 @@ def main(args):
 
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
-        if (
-            args.solver.lower() == "de"
-            or args.solver.lower() == "pso"
-            or args.solver.lower() == "cma-es"
-        ) and FE == 0:
+        if FE == 0:
             init_pop[0] = x0
-            pop_X = jnp.array(init_pop)
+            if args.solver.lower() == "de" or args.solver.lower() == "pso":
+                pop_X = jnp.array(init_pop)
 
         for ip in tqdm(
             range(NP),
@@ -221,8 +206,8 @@ def main(args):
         scale = None
         if args.solver.lower() == "de":
             scale = str(round(es_params.diff_w, 6))
-        elif args.solver.lower() == "cma-es":
-            scale = str(round(state.sigma, 6))
+        elif "es" in args.solver.lower():
+            scale = str(round(np.mean(state.sigma), 6))
         # else:
         #     scale = "N/A"
 
