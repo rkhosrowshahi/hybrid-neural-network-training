@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-# torch.set_num_threads(1)
+torch.set_num_threads(1)
 from tqdm import tqdm
 
 from src.gfo import GFOProblem, SOCallback
@@ -187,7 +187,7 @@ def main(args):
 
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
-        if args.solver.lower() == "de" and args.solver.lower() == "pso" and FE == 0:
+        if (args.solver.lower() == "de" or args.solver.lower() == "pso") and FE == 0:
             init_pop[0] = x0
             pop_X = jnp.array(init_pop)
 
