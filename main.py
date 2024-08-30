@@ -6,6 +6,8 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import torch
+
+torch.set_num_threads(1)
 from tqdm import tqdm
 
 from src.gfo import GFOProblem, SOCallback
@@ -83,7 +85,7 @@ def main(args):
         es_params = es_params.replace(
             init_min=np.min(x0),
             init_max=np.max(x0),
-            diff_w=0.1,
+            diff_w=0.5,
             mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
         )
     elif args.solver.lower() == "pso":
@@ -178,14 +180,14 @@ def main(args):
         t1 = time.time()
         pop_F = np.zeros(NP)
         # pop_X = np.zeros((NP, BD))
-        if args.solver.lower() == "de":
-            es_params = es_params.replace(
-                diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
-            )
+        # if args.solver.lower() == "de":
+        #     es_params = es_params.replace(
+        #         diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
+        #     )
 
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
-        if FE == 0:
+        if args.solver.lower() == "de" and args.solver.lower() == "pso" and FE == 0:
             init_pop[0] = x0
             pop_X = jnp.array(init_pop)
 

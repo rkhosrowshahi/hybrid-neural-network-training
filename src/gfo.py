@@ -380,7 +380,7 @@ class SOCallback(Callback):
         opt_F,
         pop_F,
     ):
-        if neval in self.k_FEs:
+        if niter % 50 == 0:
             best_X, best_F = opt_X, opt_F
             df = pd.read_csv(self.csv_path)
 
