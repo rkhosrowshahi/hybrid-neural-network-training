@@ -65,9 +65,9 @@ def main(args):
 
     optimizer = None
     if args.solver.lower() == "de":
-        optimizer = DE(popsize=100, num_dims=BD, maximize=True)
+        optimizer = DE(popsize=50, num_dims=BD, maximize=True)
     if args.solver.lower() == "pso":
-        optimizer = PSO(popsize=10, num_dims=BD, maximize=True)
+        optimizer = PSO(popsize=50, num_dims=BD, maximize=True)
     elif args.solver.lower() == "cma-es":
         optimizer = CMA_ES(
             popsize=4 + int(np.floor(3 * np.log(BD))),
