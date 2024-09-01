@@ -146,30 +146,32 @@ class GFOProblem(Problem):
     def top1_func(self, model, data_loader, device):
         model.eval()
         fitness = 0
-        all_outputs, all_labels = (
+        all_preds, all_labels = (
             torch.Tensor([]).to(device),
             torch.Tensor([]).to(device),
         )
-        t1 = time.time()
+        # t1 = time.time()
         with torch.no_grad():
             for data, labels in data_loader:
                 data, labels = data.to(device), labels.to(device)
-                outputs = model(data)
+                output = model(data)
+                _, pred = torch.topk(
+                    input=output, k=1, dim=1, largest=True, sorted=True
+                )
+                # pred = pred.t()
 
-                all_outputs = torch.cat((all_outputs, outputs))
+                all_preds = torch.cat((all_preds, pred))
                 all_labels = torch.cat((all_labels, labels))
                 # )
                 # if mode == "val":
                 #     break
-        t2 = time.time()
-        fitness = top_k_accuracy_score(
-            y_true=all_labels.cpu().detach(),
-            y_score=all_outputs.cpu().detach(),
-            k=1,
-            labels=np.arange(self.num_classes),
-        )
+        # t2 = time.time()
+        batch_size = all_preds.size(0)
+        all_preds = all_preds.t()
+        correct = all_preds.eq(all_labels.view(1, -1).expand_as(all_preds))
+        fitness = correct.view(-1).float().sum(0) / batch_size
 
-        return fitness
+        return fitness.item()
 
     def test_func(self, X):
         uxi = X.copy()
@@ -380,7 +382,7 @@ class SOCallback(Callback):
         opt_F,
         pop_F,
     ):
-        if niter % self.k_steps == 0:
+        if niter % self.k_steps == 0 or niter == 1:
             best_X, best_F = opt_X, opt_F
             df = pd.read_csv(self.csv_path)
 
@@ -412,8 +414,8 @@ class SOCallback(Callback):
                     label="best (test)",
                 )
             plt.xlabel("FE")
-            plt.xscale("log")
-            plt.ylabel("F1 score")
+            # plt.xscale("log")
+            plt.ylabel("score")
             plt.legend()
             plt.grid()
             plt.savefig(self.plt_path)

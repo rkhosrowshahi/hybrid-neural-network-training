@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 
 def get_balanced_subset(dataset, num_samples, num_classes):
@@ -37,18 +37,48 @@ def get_val_test_dataloader(dataset, batch_size):
                 ),
             ]
         )
+        trainset = torchvision.datasets.CIFAR10(
+            root="./data", train=True, download=True, transform=transform_test
+        )
         testset = torchvision.datasets.CIFAR10(
             root="./data", train=False, download=True, transform=transform_test
         )
-        balanced_indices = get_balanced_subset(
-            testset, val_num_samples + test_num_samples, num_classes
-        )
-        val_set = Subset(
-            testset, balanced_indices[:, : (val_num_samples // num_classes)].flatten()
-        )
-        test_set = Subset(
-            testset, balanced_indices[:, (val_num_samples // num_classes) :].flatten()
-        )
+        if os.path.exists("./splits/cifar-10_data_split.npz"):
+            c = np.load("./splits/cifar-10_data_split.npz")
+            val_indices = c["val"]
+            test_indices = c["test"]
+            train_indices = c["train"]
+
+        else:
+            balanced_indices = get_balanced_subset(
+                trainset, val_num_samples, num_classes
+            )
+            train_indices = balanced_indices.flatten()
+            np.random.shuffle(train_indices)
+
+            balanced_indices = get_balanced_subset(
+                testset, val_num_samples + test_num_samples, num_classes
+            )
+            val_indices = balanced_indices[
+                :, : (val_num_samples // num_classes)
+            ].flatten()
+            np.random.shuffle(val_indices)
+            test_indices = balanced_indices[
+                :, (val_num_samples // num_classes) :
+            ].flatten()
+            # test_indices = balanced_indices.flatten()
+            np.random.shuffle(test_indices)
+            np.savez(
+                "./splits/cifar-10_data_split.npz",
+                val=val_indices,
+                test=test_indices,
+                train=train_indices,
+            )
+
+        val_set = Subset(testset, val_indices)
+        test_set = Subset(testset, test_indices)
+        train_set = Subset(trainset, train_indices)
+        val_set = ConcatDataset([val_set, train_set])
         # test_set = testset
         # val_set = testset
 
@@ -65,15 +95,25 @@ def get_val_test_dataloader(dataset, batch_size):
                 ),
             ]
         )
+        trainset = torchvision.datasets.CIFAR100(
+            root="./data", train=True, download=True, transform=transform_test
+        )
         testset = torchvision.datasets.CIFAR100(
             root="./data", train=False, download=True, transform=transform_test
         )
-        if os.path.exists("./splits/cifar-100_val_test_split.npz"):
-            c = np.load("./splits/cifar-100_val_test_split.npz")
+        if os.path.exists("./splits/cifar-100_data_split.npz"):
+            c = np.load("./splits/cifar-100_data_split.npz")
             val_indices = c["val"]
             test_indices = c["test"]
+            train_indices = c["train"]
 
         else:
+            balanced_indices = get_balanced_subset(
+                trainset, val_num_samples, num_classes
+            )
+            train_indices = balanced_indices.flatten()
+            np.random.shuffle(train_indices)
+
             balanced_indices = get_balanced_subset(
                 testset, val_num_samples + test_num_samples, num_classes
             )
@@ -87,13 +127,16 @@ def get_val_test_dataloader(dataset, batch_size):
             # test_indices = balanced_indices.flatten()
             np.random.shuffle(test_indices)
             np.savez(
-                "./splits/cifar-100_val_test_split.npz",
+                "./splits/cifar-100_data_split.npz",
                 val=val_indices,
                 test=test_indices,
+                train=train_indices,
             )
 
         val_set = Subset(testset, val_indices)
         test_set = Subset(testset, test_indices)
+        train_set = Subset(trainset, train_indices)
+        val_set = ConcatDataset([val_set, train_set])
         # test_set = testset
         # val_set = testset
 
@@ -129,7 +172,7 @@ def get_val_test_dataloader(dataset, batch_size):
         )
 
     val_loader = DataLoader(
-        val_set, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=0
+        val_set, batch_size=batch_size, shuffle=False, pin_memory=True
     )
     test_loader = DataLoader(
         test_set, batch_size=batch_size, shuffle=False, pin_memory=True

@@ -40,7 +40,7 @@ def main(args):
     D = len(model_params)
 
     codebook = None
-    with open(f"codebooks/resnet18_cifar100_codebook.pkl", "rb") as f:
+    with open(f"codebooks/{args.net}_{args.dataset}_codebook.pkl", "rb") as f:
         codebook = pickle.load(f)
     BD = len(codebook)
 
@@ -58,7 +58,7 @@ def main(args):
         set_model_state=set_model_state,
         batch_size=batch_size,
         device=device,
-        criterion="f1",
+        criterion="top1",
         block=True,
         codebook=codebook,
         orig_dims=D,
@@ -69,13 +69,13 @@ def main(args):
     if args.solver.lower() == "de":
         optimizer = DE(popsize=100, num_dims=BD, maximize=True)
     if args.solver.lower() == "pso":
-        optimizer = PSO(popsize=50, num_dims=BD, maximize=True)
+        optimizer = PSO(popsize=100, num_dims=BD, maximize=True)
     elif args.solver.lower() == "cma-es":
         optimizer = CMA_ES(
-            # popsize=4 + int(np.floor(3 * np.log(BD))),
-            popsize=100,
+            popsize=4 + int(np.floor(3 * np.log(BD))),
+            # popsize=100,
             num_dims=BD,
-            sigma_init=0.002,
+            sigma_init=0.1,
             maximize=True,
         )
     elif args.solver.lower() == "simple-es":
@@ -86,15 +86,15 @@ def main(args):
     NP = optimizer.popsize
     es_params = optimizer.default_params
     print(np.min(x0), np.max(x0))
-    es_params = es_params.replace(clip_min=-2, clip_max=2)
+    es_params = es_params.replace(clip_min=np.min(x0), clip_max=np.max(x0))
 
     if args.solver.lower() == "de":
         es_params = es_params.replace(
             # init_min=np.min(x0),
             # init_max=np.max(x0),
-            diff_w=0.1,
+            diff_w=0.5,
             cross_over_rate=0.7,
-            mutate_best_vector=False,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
+            mutate_best_vector=True,  # Maybe using best vector in mutation helps to converge faster due to using the pretrained params in population
         )
     elif args.solver.lower() == "pso":
         es_params = es_params.replace(
@@ -120,15 +120,18 @@ def main(args):
 
     uxi = unblocker(codebook=codebook, orig_dims=D, blocked_params=x0)
     set_model_state(model=model, parameters=uxi)
-    best_F = problem.f1score_func(model, val_loader, device)
+    if problem.criterion == "f1":
+        best_F = problem.f1score_func(model, val_loader, device)
+    elif problem.criterion == "top1":
+        best_F = problem.top1_func(model, val_loader, device)
     best_x0 = x0
     print(f"Block Model F: {best_F:.6f}")
 
     if "es" in args.solver.lower():
         state = state.replace(mean=x0)
 
-    csv_path = f"outs/resnet18_cifar100_{args.solver.lower()}_hist.csv"
-    plt_path = f"outs/resnet18_cifar100_{args.solver.lower()}_plt.pdf"
+    csv_path = f"outs/{args.net}_{args.dataset}_{args.solver.lower()}_hist.csv"
+    plt_path = f"outs/{args.net}_{args.dataset}_{args.solver.lower()}_plt.pdf"
 
     df = pd.DataFrame(
         {
@@ -174,14 +177,12 @@ def main(args):
         #     es_params = es_params.replace(
         #         diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
         #     )
-
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
-        print(pop_X.min(), pop_X.max())
         if FE == 0:
             if args.solver.lower() == "de" or args.solver.lower() == "pso":
                 pop_X = jnp.array(init_pop)
-            pop_X = pop_X.at[0].set(x0)
+                pop_X = pop_X.at[0].set(x0)
 
         for ip in tqdm(
             range(NP),
@@ -215,7 +216,7 @@ def main(args):
         #     scale = "N/A"
 
         print(
-            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {pop_X.min():.6f}, {pop_X.max():.6f}, {(t2-t1):.6f}",
+            f"{iters}, {FE}, {best_F:.6f}, {best_pop_F:.6f}, {pop_F.mean():.6f}, {pop_F.std():.6f}, {pop_X.min():.6f}, {pop_X.max():.6f}, {(t2-t1):.1f}",
             end=", ",
         )
         if scale is not None:
