@@ -171,19 +171,19 @@ def main(args):
         print()
     while FE <= maxFE:
         t1 = time.time()
-        pop_F = np.zeros(NP)
-        # pop_X = np.zeros((NP, BD))
-        # if args.solver.lower() == "de":
-        #     es_params = es_params.replace(
-        #         diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
-        #     )
+
+        if args.solver.lower() == "de":
+            es_params = es_params.replace(
+                diff_w=np.random.uniform(low=0, high=0.1, size=1)[0]
+            )
+
         pop_X, state = optimizer.ask(rng_gen, state, es_params)
 
         if FE == 0:
             if args.solver.lower() == "de" or args.solver.lower() == "pso":
                 pop_X = jnp.array(init_pop)
                 pop_X = pop_X.at[0].set(x0)
-
+        pop_F = np.zeros(NP)
         for ip in tqdm(
             range(NP),
             desc=f"Evaluation...",
