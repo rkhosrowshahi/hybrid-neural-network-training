@@ -114,7 +114,7 @@ class GFOProblem(Problem):
 
         return fitness
 
-    def f1score_func(self, model, data_loader, device):
+    def f1score_func(self, model, data_loader, device, mode="val"):
         model.eval()
         fitness = 0
         all_preds, all_labels = (
@@ -131,8 +131,8 @@ class GFOProblem(Problem):
                 all_preds = torch.cat((all_preds, preds))
                 all_labels = torch.cat((all_labels, labels))
                 # )
-                # if mode == "val":
-                #     break
+                if mode == "train":
+                    break
         t2 = time.time()
         fitness = f1_score(
             y_true=all_labels.cpu().detach(),
@@ -143,7 +143,7 @@ class GFOProblem(Problem):
         t3 = time.time()
         return fitness
 
-    def top1_func(self, model, data_loader, device):
+    def top1_func(self, model, data_loader, device, mode="val"):
         model.eval()
         fitness = 0
         all_preds, all_labels = (
@@ -163,8 +163,8 @@ class GFOProblem(Problem):
                 all_preds = torch.cat((all_preds, pred))
                 all_labels = torch.cat((all_labels, labels))
                 # )
-                # if mode == "val":
-                #     break
+                if mode == "train":
+                    break
         # t2 = time.time()
         batch_size = all_preds.size(0)
         all_preds = all_preds.t()
@@ -234,7 +234,10 @@ class GFOProblem(Problem):
             self.set_model_state(model=self.model, parameters=uxi)
 
             fitness = self.fitness_func(
-                model=self.model, data_loader=self.data_loader, device=self.device
+                model=self.model,
+                data_loader=self.data_loader,
+                device=self.device,
+                mode="train",
             )
             fout[i] = fitness
 
@@ -249,7 +252,10 @@ class GFOProblem(Problem):
         loaded_model = self.set_model_state(model=self.model, parameters=uxi)
 
         fitness = self.fitness_func(
-            model=loaded_model, data_loader=self.data_loader, device=self.device
+            model=loaded_model,
+            data_loader=self.data_loader,
+            device=self.device,
+            mode="train",
         )
 
         return fitness

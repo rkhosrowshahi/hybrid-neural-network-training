@@ -40,9 +40,10 @@ def main(args):
     D = len(model_params)
 
     codebook = None
-    with open(f"codebooks/{args.net}_{args.dataset}_codebook.pkl", "rb") as f:
+    with open(f"codebooks/{args.net}_{args.dataset}_1e_codebook.pkl", "rb") as f:
         codebook = pickle.load(f)
     BD = len(codebook)
+    print(BD)
 
     init_params_blocked = blocker(model_params, codebook)
     x0 = init_params_blocked.copy()
@@ -82,11 +83,11 @@ def main(args):
         optimizer = SimpleES(popsize=100, num_dims=BD, sigma_init=0.002, maximize=True)
     elif args.solver.lower() == "open-es":
         optimizer = OpenES(popsize=100, num_dims=BD, opt_name="adam", maximize=True)
-    # print(optimizer.fitness_shaper.maximize)
+
     NP = optimizer.popsize
     es_params = optimizer.default_params
     print(np.min(x0), np.max(x0))
-    es_params = es_params.replace(clip_min=np.min(x0), clip_max=np.max(x0))
+    # es_params = es_params.replace(clip_min=np.min(x0), clip_max=np.max(x0))
 
     if args.solver.lower() == "de":
         es_params = es_params.replace(

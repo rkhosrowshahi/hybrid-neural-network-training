@@ -137,6 +137,7 @@ def get_val_test_dataloader(dataset, batch_size):
         test_set = Subset(testset, test_indices)
         train_set = Subset(trainset, train_indices)
         val_set = ConcatDataset([val_set, train_set])
+        val_set = trainset
         # test_set = testset
         # val_set = testset
 
@@ -172,7 +173,7 @@ def get_val_test_dataloader(dataset, batch_size):
         )
 
     val_loader = DataLoader(
-        val_set, batch_size=batch_size, shuffle=False, pin_memory=True
+        val_set, batch_size=batch_size, shuffle=True, pin_memory=True
     )
     test_loader = DataLoader(
         test_set, batch_size=batch_size, shuffle=False, pin_memory=True
