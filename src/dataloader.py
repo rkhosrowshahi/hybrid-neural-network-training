@@ -33,7 +33,8 @@ def get_val_test_dataloader(dataset, batch_size):
             [
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
                 ),
             ]
         )
@@ -77,10 +78,9 @@ def get_val_test_dataloader(dataset, batch_size):
 
         val_set = Subset(testset, val_indices)
         test_set = Subset(testset, test_indices)
-        train_set = Subset(trainset, train_indices)
-        val_set = ConcatDataset([val_set, train_set])
-        # test_set = testset
-        # val_set = testset
+        train_sel = Subset(trainset, train_indices)
+        val_set = ConcatDataset([val_set, train_sel])
+        train_set = trainset
 
     elif dataset == "cifar100":
         num_classes = 100
@@ -135,11 +135,9 @@ def get_val_test_dataloader(dataset, batch_size):
 
         val_set = Subset(testset, val_indices)
         test_set = Subset(testset, test_indices)
-        train_set = Subset(trainset, train_indices)
-        val_set = ConcatDataset([val_set, train_set])
-        val_set = trainset
-        # test_set = testset
-        # val_set = testset
+        train_sel = Subset(trainset, train_indices)
+        val_set = ConcatDataset([val_set, train_sel])
+        train_set = trainset
 
     elif dataset == "imagenet":
         num_classes = 1000
@@ -151,7 +149,8 @@ def get_val_test_dataloader(dataset, batch_size):
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
                 ),
             ]
         )
@@ -172,6 +171,9 @@ def get_val_test_dataloader(dataset, batch_size):
             testset, balanced_indices[:, (val_num_samples // num_classes) :].flatten()
         )
 
+    train_loader = DataLoader(
+        train_set, batch_size=batch_size, shuffle=True, pin_memory=True
+    )
     val_loader = DataLoader(
         val_set, batch_size=batch_size, shuffle=True, pin_memory=True
     )
@@ -179,4 +181,4 @@ def get_val_test_dataloader(dataset, batch_size):
         test_set, batch_size=batch_size, shuffle=False, pin_memory=True
     )
 
-    return val_loader, test_loader, num_classes
+    return train_loader, val_loader, test_loader, num_classes

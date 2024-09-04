@@ -121,7 +121,7 @@ class GFOProblem(Problem):
             torch.Tensor([]).to(device),
             torch.Tensor([]).to(device),
         )
-        t1 = time.time()
+        # t1 = time.time()
         with torch.no_grad():
             for data, labels in data_loader:
                 data, labels = data.to(device), labels.to(device)
@@ -130,17 +130,17 @@ class GFOProblem(Problem):
 
                 all_preds = torch.cat((all_preds, preds))
                 all_labels = torch.cat((all_labels, labels))
-                # )
+
                 if mode == "train":
                     break
-        t2 = time.time()
+        # t2 = time.time()
         fitness = f1_score(
             y_true=all_labels.cpu().detach(),
             y_pred=all_preds.cpu().detach(),
             average="macro",
             labels=np.arange(self.num_classes),
         )
-        t3 = time.time()
+        # t3 = time.time()
         return fitness
 
     def top1_func(self, model, data_loader, device, mode="val"):
@@ -158,11 +158,10 @@ class GFOProblem(Problem):
                 _, pred = torch.topk(
                     input=output, k=1, dim=1, largest=True, sorted=True
                 )
-                # pred = pred.t()
 
                 all_preds = torch.cat((all_preds, pred))
                 all_labels = torch.cat((all_labels, labels))
-                # )
+
                 if mode == "train":
                     break
         # t2 = time.time()
@@ -421,7 +420,7 @@ class SOCallback(Callback):
                 )
             plt.xlabel("FE")
             # plt.xscale("log")
-            plt.ylabel("score")
+            plt.ylabel("Score")
             plt.legend()
             plt.grid()
             plt.savefig(self.plt_path)

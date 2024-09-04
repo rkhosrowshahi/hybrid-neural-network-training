@@ -30,7 +30,7 @@ def main(args):
     # set_seed(args.seed)
 
     batch_size = 128
-    val_loader, test_loader, num_classes = get_val_test_dataloader(
+    train_loader, test_loader, num_classes = get_val_test_dataloader(
         dataset=args.dataset, batch_size=batch_size
     )
 
@@ -55,7 +55,7 @@ def main(args):
         model=model,
         dataset=None,
         test_loader=test_loader,
-        train_loader=val_loader,
+        train_loader=train_loader,
         set_model_state=set_model_state,
         batch_size=batch_size,
         device=device,
@@ -122,9 +122,9 @@ def main(args):
     uxi = unblocker(codebook=codebook, orig_dims=D, blocked_params=x0)
     set_model_state(model=model, parameters=uxi)
     if problem.criterion == "f1":
-        best_F = problem.f1score_func(model, val_loader, device)
+        best_F = problem.f1score_func(model, train_loader, device)
     elif problem.criterion == "top1":
-        best_F = problem.top1_func(model, val_loader, device)
+        best_F = problem.top1_func(model, train_loader, device, mode="train")
     best_x0 = x0
     print(f"Block Model F: {best_F:.6f}")
 
