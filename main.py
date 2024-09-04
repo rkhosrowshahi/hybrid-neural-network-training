@@ -30,7 +30,7 @@ def main(args):
     # set_seed(args.seed)
 
     batch_size = 128
-    train_loader, test_loader, num_classes = get_val_test_dataloader(
+    train_loader, val_loader, test_loader, num_classes = get_val_test_dataloader(
         dataset=args.dataset, batch_size=batch_size
     )
 
